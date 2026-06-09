@@ -15,13 +15,10 @@ in :class:`ants.config.GlobalConfiguration`. See :mod:`ants.regrid` for further
 details.
 """
 import ants
-import ants.decomposition as decomp
 import ants.io.save as save
 import ants.utils
-import iris.cube
 from ants.utils.cube import create_time_constrained_cubes
-import numpy as np
-
+from ants.fileformats._grid_extract import extract_grid
 
 def load_data(
     source,
@@ -33,25 +30,15 @@ def load_data(
     if begin is not None:
         source_cubes = create_time_constrained_cubes(source_cubes, begin, end)
 
-    vertical_grid = ants.io.load.load_grid(target_grid)
+    target_cube = ants.io.load.load_grid(target_grid)
 
-    return source_cubes, vertical_grid
-
-
-def create_target(source_grid, vertical_grid):
-    source = ants.utils.cube.as_cubelist(source_grid)[0]
-    data = np.ones((source.shape[0], source.shape[1], vertical_grid.shape[0]))
-    target_grid = iris.cube.Cube(data)
-    target_grid.add_dim_coord(source.coord("latitude"), 0)
-    target_grid.add_dim_coord(source.coord("longitude"), 1)
-    target_grid.add_dim_coord(vertical_grid.coord("model_level_number"), 2)
-    return target_grid
+    return source_cubes, target_cube
 
 
 def regrid(sources, target):
     sources = ants.utils.cube.as_cubelist(sources)
     results = []
-    scheme = ants.regrid.GeneralRegridScheme(vertical_scheme="Linear")
+    scheme = ants.regrid.GeneralRegridScheme(vertical_scheme='Linear')
     for source in sources:
         results.append(source.regrid(target, scheme))
     return results
@@ -98,20 +85,19 @@ def main(
     A single data cube with the regridded data.
 
     """
-    source_cubes, vertical_grid = load_data(
+    source_cubes, target_cube = load_data(
         source_path,
         target_path,
         begin,
         end,
     )
-    if ants.utils.cube._is_ugrid(vertical_grid):
+    if ants.utils.cube._is_ugrid(target_cube):
         raise ValueError(
             "Target appears to be a UGrid mesh - the regrid to mesh application in "
             "UG-ANTS should be used instead."
         )
 
-    target_cube = create_target(source_cubes, vertical_grid)
-    regridded_cubes = decomp.decompose(regrid, source_cubes, target_cube)
+    regridded_cubes = regrid(source_cubes, target_cube)
 
     if save_ukca:
         save.ukca_netcdf(regridded_cubes, output_path)
