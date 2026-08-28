@@ -32,13 +32,41 @@ def load_data(
 
     target_cube = ants.io.load.load_grid(target_grid)
 
+    check_target(target_cube, source_cubes)
+
     return source_cubes, target_cube
+
+def check_target(
+        target_cube,
+        source_cubes,
+):
+    """
+    Check the target cube against common pitfalls. This application is for
+    structured mesh and vertical regridding only.
+    """
+    if ants.utils.cube._is_ugrid(target_cube):
+        raise ValueError(
+            "Target appears to be a UGrid mesh - the regrid to mesh application in "
+            "UG-ANTS should be used instead."
+        )
+
+    target_coords = [coord.name() for coord in target_cube.coords()]
+
+    if 'latitude' in target_coords:
+        for cube in source_cubes:
+            if cube.coord('latitude') != target_cube.coord('latitude'):
+                raise ValueError('Target grid latitude coordinates do not match source grid latitude coordinates')
+
+    if 'longitude' in target_coords:
+        for cube in source_cubes:
+            if cube.coord('longitude') != target_cube.coord('longitude'):
+                raise ValueError('Target grid longitude coordinates do not match source grid longitude coordinates')
 
 
 def regrid(sources, target):
     sources = ants.utils.cube.as_cubelist(sources)
     results = []
-    scheme = ants.regrid.GeneralRegridScheme(vertical_scheme='Linear')
+    scheme = ants.regrid.GeneralRegridScheme()
     for source in sources:
         results.append(source.regrid(target, scheme))
     return results
@@ -54,7 +82,7 @@ def main(
     netcdf_only,
 ):
     """
-    General regrid application top level call function.
+    Vertical regrid application top level call function.
 
     Loads source data cubes, regrids them to match target data cube
     co-ordinates, and saves result to output.  In addition to writing the
@@ -91,11 +119,6 @@ def main(
         begin,
         end,
     )
-    if ants.utils.cube._is_ugrid(target_cube):
-        raise ValueError(
-            "Target appears to be a UGrid mesh - the regrid to mesh application in "
-            "UG-ANTS should be used instead."
-        )
 
     regridded_cubes = regrid(source_cubes, target_cube)
 
