@@ -18,7 +18,7 @@ import ants
 import ants.io.save as save
 import ants.utils
 from ants.utils.cube import create_time_constrained_cubes
-from ants.fileformats._grid_extract import extract_grid
+
 
 def load_data(
     source,
@@ -36,9 +36,10 @@ def load_data(
 
     return source_cubes, target_cube
 
+
 def check_target(
-        target_cube,
-        source_cubes,
+    target_cube,
+    source_cubes,
 ):
     """
     Check the target cube against common pitfalls. This application is for
@@ -52,15 +53,21 @@ def check_target(
 
     target_coords = [coord.name() for coord in target_cube.coords()]
 
-    if 'latitude' in target_coords:
+    if "latitude" in target_coords:
         for cube in source_cubes:
-            if cube.coord('latitude') != target_cube.coord('latitude'):
-                raise ValueError('Target grid latitude coordinates do not match source grid latitude coordinates')
+            if cube.coord("latitude") != target_cube.coord("latitude"):
+                raise ValueError(
+                    "Target grid latitude coordinates do not match source grid "
+                    "latitude coordinates"
+                )
 
-    if 'longitude' in target_coords:
+    if "longitude" in target_coords:
         for cube in source_cubes:
-            if cube.coord('longitude') != target_cube.coord('longitude'):
-                raise ValueError('Target grid longitude coordinates do not match source grid longitude coordinates')
+            if cube.coord("longitude") != target_cube.coord("longitude"):
+                raise ValueError(
+                    "Target grid longitude coordinates do not match source grid "
+                    "longitude coordinates"
+                )
 
 
 def regrid(sources, target):
