@@ -3,9 +3,9 @@
    :keywords: ANTS, utils
    :property=og:locale: en_GB
 
-=======================
+========================
 ancil_vertical_regrid.py
-=======================
+========================
 
 For a full description see :mod:`ants.cli.ancil_vertical_regrid`.
 
